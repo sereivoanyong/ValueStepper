@@ -89,7 +89,7 @@ private enum Button: Int {
     }
 
     /// The text color of the value label in positioned in the center.
-    @IBInspectable public var labelTextColor: UIColor = .white {
+    @IBInspectable public var labelTextColor: UIColor! {
         didSet {
             valueLabel.textColor = labelTextColor
         }
@@ -108,10 +108,10 @@ private enum Button: Int {
     }
 
     // Default width of the stepper. Taken from the official UIStepper object.
-    public let defaultWidth = 141.0
+    public let defaultWidth: CGFloat = 141.0
 
     // Default height of the stepper. Taken from the official UIStepper object.
-    public let defaultHeight = 29.0
+    public let defaultHeight: CGFloat = 29.0
 
     /// Value label that displays the current value displayed at the center of the stepper.
     public let valueLabel: UILabel = {
@@ -163,15 +163,15 @@ private enum Button: Int {
 
     // MARK: Initializers
 
-    override init(frame: CGRect) {
+    public override init(frame: CGRect = .zero) {
         // Override frame with default width and height
-        let frameWithDefaultSize = CGRect(x: Double(frame.origin.x), y: Double(frame.origin.y), width: defaultWidth, height: defaultHeight)
+        let frameWithDefaultSize = CGRect(x: frame.origin.x, y: frame.origin.y, width: defaultWidth, height: defaultHeight)
         super.init(frame: frameWithDefaultSize)
         setUp()
     }
 
-    public required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
+    public required init?(coder: NSCoder) {
+        super.init(coder: coder)
         setUp()
     }
 
@@ -194,7 +194,7 @@ private enum Button: Int {
 
     // MARK: Storyboard preview setup
 
-    override open func prepareForInterfaceBuilder() {
+    open override func prepareForInterfaceBuilder() {
         setUp()
     }
 
@@ -202,13 +202,15 @@ private enum Button: Int {
         return CGSize(width: defaultWidth, height: defaultHeight)
     }
 
-    override public static var requiresConstraintBasedLayout: Bool {
+    open override class var requiresConstraintBasedLayout: Bool {
         return true
     }
 
     // MARK: Lifecycle
 
     open override func layoutSubviews() {
+        super.layoutSubviews()
+
         // Size constants
         let sliceWidth = bounds.width / 3
         let sliceHeight = bounds.height
@@ -312,7 +314,7 @@ private enum Button: Int {
 
     @objc func continuousIncrement(_ timer: Timer) {
         // Check which one of the two buttons was continuously pressed
-        let userInfo = timer.userInfo as! Dictionary<String, AnyObject>
+        let userInfo = timer.userInfo as! [String: Any]
         guard let sender = userInfo["sender"] as? UIButton else { return }
 
         if sender.tag == Button.decrease.rawValue {
@@ -325,7 +327,7 @@ private enum Button: Int {
     @objc func selected(_ sender: UIButton) {
         // Start a timer to handle the continuous pressed case
         if autorepeat {
-            continuousTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(continuousIncrement), userInfo: ["sender" : sender], repeats: true)
+            continuousTimer = .scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(continuousIncrement), userInfo: ["sender" : sender], repeats: true)
         }
         sender.backgroundColor = highlightedBackgroundColor
     }
@@ -356,7 +358,7 @@ private enum Button: Int {
             textField.keyboardType = .decimalPad
         }
         alertController.addAction(UIAlertAction(title: "Confirm", style: .default) { _ in
-            if let newString = alertController.textFields?.first?.text, let newValue = Double(newString) {
+            if let newValue = alertController.textFields?.first?.text.flatMap(Double.init) {
                 if newValue >= self.minimumValue || newValue <= self.maximumValue {
                     self.value = newValue
                 }
@@ -405,9 +407,9 @@ private enum Button: Int {
 
     // Update all the subviews tintColor properties.
     open override func tintColorDidChange() {
+        super.tintColorDidChange()
         layer.borderColor = tintColor.cgColor
         iconButtonColor = tintColor
-        valueLabel.textColor = labelTextColor
         leftSeparator.strokeColor = tintColor.cgColor
         rightSeparator.strokeColor = tintColor.cgColor
         increaseLayer.strokeColor = tintColor.cgColor
@@ -435,5 +437,3 @@ extension Double {
         return NSDecimalNumber(value: self).rounding(accordingToBehavior: behavior).doubleValue
     }
 }
-
-
